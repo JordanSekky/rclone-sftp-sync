@@ -62,9 +62,9 @@ run_sync() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting rclone sync..."
     echo "Remote: ${remote_path}"
     echo "Local:  ${local_path}"
-    echo "Flags:  --transfers 16 --stats-one-line -P --size-only ${extra_flags}"
+    echo "Flags:  --transfers 16 --stats-one-line --stats 10s --log-level INFO --size-only ${extra_flags}"
     
-    rclone sync --transfers 16 --stats-one-line -P --size-only ${extra_flags} "${remote_path}" "${local_path}"
+    rclone sync --transfers 16 --stats-one-line --stats 10s --log-level INFO --size-only ${extra_flags} "${remote_path}" "${local_path}"
     
     local exit_code=$?
     if [[ $exit_code -eq 0 ]]; then
@@ -127,13 +127,7 @@ main() {
 
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Sleeping for ${sleep_time} seconds..."
         echo "=================================================="
-        
-        # Sleep with progress indicator
-        for ((i=0; i<sleep_time; i++)); do
-            printf "\rSleeping: %3d/%d seconds" "$i" "$sleep_time"
-            sleep 1
-        done
-        printf "\rSleeping: %3d/%d seconds - Complete!\n" "$sleep_time" "$sleep_time"
+        sleep "$sleep_time"
     done
 }
 
