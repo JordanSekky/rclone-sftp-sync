@@ -76,6 +76,26 @@ run_sync() {
     return $exit_code
 }
 
+# Returns 0 if source has changed since last sync, 1 otherwise
+check_for_changes() {
+    local remote_path="${RCLONE_REMOTE}:${RCLONE_REMOTE_PATH}"
+    local local_path="${RCLONE_LOCAL_PATH}"
+    local extra_flags="${RCLONE_EXTRA_FLAGS:-}"
+
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running dry-run to check for mid-sync changes..."
+
+    local change_count
+    change_count=$(rclone sync --dry-run --combined - --size-only ${extra_flags} "${remote_path}" "${local_path}" 2>/dev/null | grep -cE '^[+*!-]')
+
+    if [[ $change_count -gt 0 ]]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Detected ${change_count} change(s) since sync started"
+        return 0
+    else
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] No changes detected, source and dest are in sync"
+        return 1
+    fi
+}
+
 # Main execution
 main() {
     # Validate environment variables
@@ -98,7 +118,13 @@ main() {
     # Infinite loop
     while true; do
         run_sync
-        
+
+        if check_for_changes; then
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Re-syncing immediately..."
+            echo "=================================================="
+            continue
+        fi
+
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] Sleeping for ${sleep_time} seconds..."
         echo "=================================================="
         
